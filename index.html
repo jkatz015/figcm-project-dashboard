@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIGCM — Project Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f6fa;
+    color: #2c3e50;
+    line-height: 1.5;
+    padding: 0;
+  }
+  header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #fff;
+    padding: 28px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px; }
+  header .meta { font-size: 0.85rem; opacity: 0.8; }
+  .summary-bar {
+    display: flex;
+    gap: 24px;
+    padding: 16px 32px;
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+  }
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .dot-green { background: #27ae60; }
+  .dot-orange { background: #f39c12; }
+  .dot-red { background: #e74c3c; }
+  .dot-gray { background: #95a5a6; }
+  .dot-blue { background: #3498db; }
+  main { max-width: 1100px; margin: 24px auto; padding: 0 20px; }
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 28px 0 12px;
+    color: #1a1a2e;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 6px;
+  }
+
+  /* Project Cards */
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+    border-left: 5px solid #27ae60;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+    position: relative;
+  }
+  .card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+  .card.status-at-risk { border-left-color: #f39c12; }
+  .card.status-blocked { border-left-color: #e74c3c; }
+  .card.status-no-charter { border-left-color: #95a5a6; }
+  .card-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .card-id {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    font-weight: 400;
+  }
+  .card-details {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #555;
+  }
+  .card-details span { display: flex; align-items: center; gap: 4px; }
+  .card-toggle {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .card .worklog-panel {
+    display: none;
+    padding: 0 20px 16px;
+    border-top: 1px solid #eee;
+    margin-top: 0;
+  }
+  .card.expanded .worklog-panel { display: block; }
+  .card.expanded .card-toggle-show { display: none; }
+  .card .card-toggle-close { display: none; }
+  .card.expanded .card-toggle-close { display: inline; }
+  .worklog-entry { margin-top: 12px; }
+  .worklog-entry .wl-date { font-weight: 700; font-size: 0.9rem; color: #1a1a2e; }
+  .worklog-entry .wl-body { font-size: 0.85rem; color: #555; margin-top: 4px; }
+  .worklog-entry .wl-body ul { margin-left: 18px; margin-top: 4px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem; }
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #ddd;
+    color: #1a1a2e;
+  }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+  tr.urgent td { background: #fde8e8; }
+
+  /* Risk list */
+  .risk-item {
+    background: #fff;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .risk-severity {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .sev-high { background: #fde8e8; color: #e74c3c; }
+  .sev-medium { background: #fef3e2; color: #f39c12; }
+  .sev-low { background: #e8f8ef; color: #27ae60; }
+  .risk-text { font-size: 0.88rem; }
+
+  /* Priorities */
+  .priority-list { list-style: none; counter-reset: pri; }
+  .priority-list li {
+    counter-increment: pri;
+    padding: 10px 16px 10px 44px;
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    position: relative;
+    font-size: 0.9rem;
+  }
+  .priority-list li::before {
+    content: counter(pri);
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    width: 22px; height: 22px;
+    background: #1a1a2e;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .priority-list li strong { color: #1a1a2e; }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.8rem;
+    color: #95a5a6;
+    margin-top: 40px;
+  }
+
+  @media print {
+    header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .card { break-inside: avoid; }
+    .card .worklog-panel { display: block !important; }
+  }
+  @media (max-width: 600px) {
+    header { padding: 20px 16px; }
+    main { padding: 0 12px; }
+    .summary-bar { padding: 12px 16px; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>FIGCM — Project Dashboard</h1>
+    <div class="meta">Generated: March 24, 2026</div>
+  </div>
+</header>
+
+<div class="summary-bar">
+  <div class="summary-item"><span class="dot dot-blue"></span> 2 Total Projects</div>
+  <div class="summary-item"><span class="dot dot-green"></span> 1 On Track</div>
+  <div class="summary-item"><span class="dot dot-gray"></span> 1 Active (No Phase Tracking)</div>
+  <div class="summary-item"><span class="dot dot-red"></span> 0 Blocked</div>
+</div>
+
+<main>
+
+<!-- ============ PROJECT CARDS ============ -->
+<h2>Projects</h2>
+
+<div class="card" onclick="this.classList.toggle('expanded')">
+  <div class="card-header">
+    <div>
+      <div class="card-title">
+        <span class="dot dot-green" style="width:10px;height:10px;vertical-align:middle;margin-right:4px"></span>
+        Social Media Pipeline Automation
+        <span class="card-id">FIGCM-2026-001</span>
+      </div>
+      <div class="card-details">
+        <span><strong>Phase:</strong> Requirements / Discovery</span>
+        <span><strong>Status:</strong> On Track</span>
+        <span><strong>Stakeholders:</strong> Jonathan Katz, Harini</span>
+      </div>
+    </div>
+    <div class="card-toggle">
+      <span class="card-toggle-show">Work Log &#9662;</span>
+      <span class="card-toggle-close">Close &#9652;</span>
+    </div>
+  </div>
+  <div class="worklog-panel">
+    <div class="worklog-entry">
+      <div class="wl-date">2026-03-24</div>
+      <div class="wl-body">
+        <strong>Participants:</strong> Jonathan Katz<br>
+        <strong>Summary:</strong> Project FIGCM-2026-001 initiated. Project folder created. Charter written from the project definition document dated March 21, 2026. Covers a three-phase automation initiative to eliminate the manual weekly social media reporting workflow via n8n on Railway.
+        <ul>
+          <li>Review existing posts table schema on Railway PostgreSQL</li>
+          <li>Collect sample CSV/XLS exports from all four platforms (Harini)</li>
+          <li>Confirm Google Drive drop folder and access permissions</li>
+          <li>Provision n8n as a Docker service on Railway</li>
+          <li>Set up GitHub repo for n8n workflow JSON version control</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" onclick="this.classList.toggle('expanded')">
+  <div class="card-header">
+    <div>
+      <div class="card-title">
+        <span class="dot dot-green" style="width:10px;height:10px;vertical-align:middle;margin-right:4px"></span>
+        Social Media Dashboard
+        <span class="card-id">Existing — Live</span>
+      </div>
+      <div class="card-details">
+        <span><strong>Phase:</strong> Production</span>
+        <span><strong>Status:</strong> Active</span>
+        <span><strong>Stack:</strong> Next.js, Prisma, PostgreSQL, Railway, Looker Studio</span>
+      </div>
+    </div>
+    <div class="card-toggle">
+      <span class="card-toggle-show">Details &#9662;</span>
+      <span class="card-toggle-close">Close &#9652;</span>
+    </div>
+  </div>
+  <div class="worklog-panel">
+    <div class="worklog-entry">
+      <div class="wl-body">
+        <strong>Live URL:</strong> <a href="https://figcm-dashboard.up.railway.app" target="_blank">figcm-dashboard.up.railway.app</a><br>
+        <strong>Description:</strong> Centralized analytics dashboard for FIGCM social media — Facebook, Instagram, YouTube, LinkedIn. Embedded Looker Studio dashboards with weekly reports and monthly archive. Manual CSV import workflow (this is the process being automated by FIGCM-2026-001).<br>
+        <strong>Key tables:</strong> socialmediapost, WeeklyReport, MonthlySnapshot, Dashboard
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DEADLINES ============ -->
+<h2>Upcoming Deadlines</h2>
+<table>
+  <thead>
+    <tr><th>Project</th><th>Milestone</th><th>Deadline</th><th>Days Left</th><th>Phase</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Pipeline Automation</td>
+      <td>Phase 1 — ETL Automation MVP</td>
+      <td>TBD</td>
+      <td>—</td>
+      <td>Requirements</td>
+    </tr>
+    <tr>
+      <td>Pipeline Automation</td>
+      <td>Phase 2 — Dashboard & Report Automation</td>
+      <td>TBD</td>
+      <td>—</td>
+      <td>Future</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============ RECENT ACTIVITY ============ -->
+<h2>Recent Activity</h2>
+<div class="risk-item">
+  <div>
+    <strong>2026-03-24 — Pipeline Automation:</strong> Project initiated. Charter created from project definition document. Folder structure set up on Google Drive. Open questions identified around upsert key, Drive folder structure, and Railway plan capacity.
+  </div>
+</div>
+
+<!-- ============ RISKS & BLOCKERS ============ -->
+<h2>Risks &amp; Blockers</h2>
+
+<div class="risk-item">
+  <span class="risk-severity sev-high">High</span>
+  <div class="risk-text"><strong>R-01:</strong> Platform export formats change without notice — ETL workflows must be maintained when Meta/YouTube/LinkedIn alter CSV columns.</div>
+</div>
+<div class="risk-item">
+  <span class="risk-severity sev-medium">Medium</span>
+  <div class="risk-text"><strong>R-02:</strong> Railway Docker deployment complexity — n8n on Railway via Docker may require custom configuration.</div>
+</div>
+<div class="risk-item">
+  <span class="risk-severity sev-medium">Medium</span>
+  <div class="risk-text"><strong>R-03:</strong> Google Drive API rate limits or auth expiry — long-running credential tokens need a refresh strategy.</div>
+</div>
+<div class="risk-item">
+  <span class="risk-severity sev-medium">Medium</span>
+  <div class="risk-text"><strong>R-04:</strong> Upsert key not clearly defined — without a reliable deduplication key, risk of duplicate records.</div>
+</div>
+<div class="risk-item">
+  <span class="risk-severity sev-low">Low</span>
+  <div class="risk-text"><strong>R-05:</strong> Scope creep into Phase 2/3 before Phase 1 is stable.</div>
+</div>
+
+<!-- ============ PRIORITIES ============ -->
+<h2>Suggested Priorities</h2>
+<ol class="priority-list">
+  <li><strong>Pipeline Automation</strong> — Resolve open questions (OQ-01 through OQ-06) before Phase 1 build can begin. Especially: posts table schema review, upsert key definition, and Google Drive folder structure.</li>
+  <li><strong>Pipeline Automation</strong> — Confirm Railway plan supports adding n8n as a second Docker service.</li>
+  <li><strong>Pipeline Automation</strong> — Collect sample CSV/XLS exports from Harini for all four platforms to validate field mapping.</li>
+  <li><strong>Social Media Dashboard</strong> — Continue weekly Monday data imports until the pipeline automation is live.</li>
+</ol>
+
+</main>
+
+<footer>
+  Generated by FIGCM Portfolio Dashboard — March 24, 2026
+</footer>
+
+</body>
+</html>
